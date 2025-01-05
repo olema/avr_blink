@@ -21,4 +21,27 @@ LDI R16, 0b00000011
 OUT DDRD, R16
 
 Start:
-	SBI PORTD
+	SBI PORTD, PORTD0	; set bit 0 port D
+	CBI PORTD, PORTD1	; clear bit 1 port D
+	RCALL Wait
+	SBI PORTD, PORTD1
+	CBI PORTD, PORTD0
+	RCALL Wait
+	RJMP Start
+
+Wait:
+	LDI R17, Delay
+WLoop0:
+	LDI R18, 50
+WLoop1:
+	LDI R19, 0xC8
+WLoop2:
+	DEC R19
+	BRNE WLoop2
+	DEC R18
+	BRNE WLoop1
+	DEC R17
+	BRNE WLoop0
+RET
+
+Program_name: .DB "Simple LEDs blinking program"
