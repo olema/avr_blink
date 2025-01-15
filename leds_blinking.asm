@@ -1,18 +1,44 @@
 ; Светодиодная мигалка на микроконтроллере  Atmega8L-8PU
 ; https://ph0en1x.net/79-avr-asm-first-program-for-microcontroller.html
 
-.INCLUDEPATH "/usr/share/avra/" ; путь для подгрузки .inc файлов
-.INCLUDE "m8def.inc"
-.LIST				; вклюение генерации листинга
+.includepath "/usr/share/avra/" ; путь для подгрузки .inc файлов
+.include "m8def.inc"
+.list				; вклюение генерации листинга
 
-.CSEG
-.ORG 0x0000
+.cseg
+.org 0x0000
+
+; вектора для ATmega8
+rjmp RESET ; Reset Handler
+reti; rjmp EXT_INT0 ; IRQ0 Handler
+reti; rjmp EXT_INT1 ; IRQ1 Handler
+reti; rjmp TIM2_COMP ; Timer2 Compare Handler
+reti; rjmp TIM2_OVF ; Timer2 Overflow Handler
+reti; rjmp TIM1_CAPT ; Timer1 Capture Handler
+reti; rjmp TIM1_COMPA ; Timer1 CompareA Handler
+reti; rjmp TIM1_COMPB ; Timer1 CompareB Handler
+reti; rjmp TIM1_OVF ; Timer1 Overflow Handler
+reti; rjmp TIM0_OVF ; Timer0 Overflow Handler
+reti; rjmp SPI_STC ; SPI Transfer Complete Handler
+reti; rjmp USART_RXC ; USART RX Complete Handler
+reti; rjmp USART_UDRE ; UDR Empty Handler
+reti; rjmp USART_TXC ; USART TX Complete Handler
+reti; rjmp ADC ; ADC Conversion Complete Handler
+reti; rjmp EE_RDY ; EEPROM Ready Handler
+reti; rjmp ANA_COMP ; Analog Comparator Handler
+reti; rjmp TWSI ; Two-wire Serial Interface Handler
+reti; rjmp SPM_RDY ; Store Program Memory Ready Handler
 
 ; -- инициализация стека --
-LDI R16, Low(RAMEND)
-OUT SPL, R16
-LDI R16, High(RAMEND)
-OUT SPH, R16
+RESET:
+	ldi R16, Low(RAMEND)
+	out SPL, R16
+	ldi R16, High(RAMEND)
+	out SPH, R16
+
+; -- analog comparator disable
+	ldi R16, 1<<ACD
+	out ACSR, R16
 
 .equ Delay = 5
 
