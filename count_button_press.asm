@@ -15,7 +15,7 @@
 .cseg
 .org 0x0
 
-; вектора прерываний
+; векторы прерываний
 	rjmp RESET ; Reset Handler
 	reti; rjmp EXT_INT0 ; IRQ0 Handler
 	reti; rjmp EXT_INT1 ; IRQ1 Handler
@@ -47,3 +47,15 @@ RESET:
 	out PORTD, temp		; вкл подтягивающего резистора
 	ldi temp, 0b11111111	; 
 	out DDRB, temp		; порт B все контакты на выход
+	clr counter		; очищаем счетчик
+PINCYCLE:			; цикл отслеживания кнопки
+	sbic PIND, 2		; Пропустить следующую команду если бит в регистре ввода/вывода очищен (кнопка нажата)
+	rjmp PINCYCLE
+; загрузка значений задержки 
+	ldi razr2, 0x02
+	ldi razr1, 0x71
+	ldi razr0, 0x00
+	rcall DELAY
+PIN_RELEASE:
+	sbis PIND, 2		; Пропустить следующую команду если бит в регистре ввода/вывода установлен (если кнопка отпущена)
+	rjmp PINCYCLE
