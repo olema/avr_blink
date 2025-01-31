@@ -17,8 +17,8 @@
 .org 0x0
 
 ; векторы прерываний
-	rjmp RESET ; Reset Handler
-	rjmp EXT_INT0 ; IRQ0 Handler
+	rjmp RESET 		; Reset Handler
+	rjmp EXT_INT0 		; IRQ0 Handler
 	reti; rjmp EXT_INT1 ; IRQ1 Handler
 	reti; rjmp TIM2_COMP ; Timer2 Compare Handler
 	reti; rjmp TIM2_OVF ; Timer2 Overflow Handler
@@ -41,4 +41,10 @@
 EXT_INT0:		; внешнее прерывание по кнопке
 	clr temp	; запрещаем прерывания по кнопке
 	out GIMSK, temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
-	
+	ldi temp, 0xff	; на всякий случай очищаем регистр флагов прерываний
+	out GIFR, temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
+	sbrs flag, 0	; проверяем бит 0 нашего регистра флагов 
+			; SBRS – Skip if Bit in Register is Set
+			; SBRS Rr,b (0 ≤ r ≤ 31, 0 ≤ b ≤ 7)
+	rjmp PUSH_PIN	; если 0, то было нажатие
+	cbr flag, 1	; иначе было отпускание, очищаем бит 0
