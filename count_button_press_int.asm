@@ -40,11 +40,31 @@
 ; ====== программа =======
 EXT_INT0:		; внешнее прерывание по кнопке
 	clr temp	; запрещаем прерывания по кнопке
-	out GIMSK, temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
-	ldi temp, 0xff	; на всякий случай очищаем регистр флагов прерываний
-	out GIFR, temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
-	sbrs flag, 0	; проверяем бит 0 нашего регистра флагов 
+	out GIMSK,temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
+	ldi temp,0xff	; на всякий случай очищаем регистр флагов прерываний
+	out GIFR,temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
+	sbrs flag,0	; проверяем бит 0 нашего регистра флагов 
 			; SBRS – Skip if Bit in Register is Set
 			; SBRS Rr,b (0 ≤ r ≤ 31, 0 ≤ b ≤ 7)
 	rjmp PUSH_PIN	; если 0, то было нажатие
-	cbr flag, 1	; иначе было отпускание, очищаем бит 0
+	cbr flag,1	; иначе было отпускание, очищаем бит 0
+			; CBR – Clear Bits in Register
+			; Rd ← Rd ∧ (0xFF - K)  (пояснение: ∧ - AND) 
+			; CBR Rd,K (16 ≤ d ≤ 31, 0 ≤ K ≤ 255)
+	inc counter	; кнопка была отпущена, увеличиваем счетчик
+	out PORTB,counter	; выводим счетчик в порт B
+	ldi count_time,50	; интервал 0.2 сек
+	rjmp ENT_INT	; на выход
+PUSH_PIN:		; было нажатие
+	sbr flag,1	; устанавливаем бит 0
+			; SBR – Set Bits in Register
+			; Rd ← Rd v K
+			; SBR Rd,K 16 ≤ d ≤ 31, 0 ≤ K ≤ 255
+	ldi count_time,128	; интервал 0.5 сек
+ENT_INT:
+	ldi temp,0b00000011	; запуск Timer0, входная частота 1:64
+	out TCCR0,temp	; .equ	TCCR0	= 0x33
+			; TCCR0 - Timer/Counter0 Control Register
+	reti		; конец обработки прерывания кнопки
+
+
