@@ -38,12 +38,21 @@
 	reti; rjmp SPM_RDY ; Store Program Memory Ready Handler
 
 ; ====== программа =======
+; ******
+; ****** обработчик прерывания INT0 (нажатие кнопки) 
+; ******
 EXT_INT0:		; внешнее прерывание по кнопке
 	clr temp	; запрещаем прерывания по кнопке
 	out GIMSK,temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
+			;   бит 7 — INT1, маска внешнего прерывания INT1;
+			;   бит 6 — INT0, маска внешнего прерывания INT0;
+			;   бит 5 — INT2, маска внешнего прерывания INT2;
+			;   бит 1 — IVSEL (Interrupt Vector Select);
+			;   бит 0 — IVCE (Interrupt Vector Change Enable).
+			;
 	ldi temp,0xff	; на всякий случай очищаем регистр флагов прерываний
 	out GIFR,temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
-	sbrs flag,0	; проверяем бит 0 нашего регистра флагов 
+	sbrs flag,0	; проверяем бит 0 нашего регистра флагов (r19) 
 			; SBRS – Skip if Bit in Register is Set
 			; SBRS Rr,b (0 ≤ r ≤ 31, 0 ≤ b ≤ 7)
 	rjmp PUSH_PIN	; если 0, то было нажатие
@@ -66,5 +75,53 @@ ENT_INT:
 	out TCCR0,temp	; .equ	TCCR0	= 0x33
 			; TCCR0 - Timer/Counter0 Control Register
 	reti		; конец обработки прерывания кнопки
-
-
+; ******
+; ****** конец обработчика прерывания INT0
+; ******
+;
+; ******
+; ****** обработчик прерывания таймера Timer0
+; ******
+TIM0:			; обработчик прерывания Timer0
+	dec count_time	; в каждом прерывании уменьшаем на 1
+	breq END_TIMER	; если 0, то на конец отсчета
+	reti		; иначе выход из прерывания
+END_TIMER:
+	clr temp	; останавливаем таймер
+	out TCCR0,temp	;
+	sbrc flag,0	; проверяем бит 0 нашего регистра флагов
+	rjmp PUSH_TIM	; если 1, то было нажатие
+	ldi temp,(1<<ISC01)	; инчаче устанавливаем INT0 но спаду
+	out MCUCR, temp
+END_TIM:
+	ldi temp,(1<<INT0)	; разрешаем INT0
+	out GIMSK,temp
+	reti
+; ******
+; ****** конец обработчика прерывания Timer0
+; ******
+;
+; ******
+; ****** начальная инициализация
+; ******
+RESET:
+	ldi temp,low(RAMEND)	; загрузка указателя стека
+	out SPL,temp
+	ldi temp,0b00000100	; для второго разряда порта D
+	out PORTD,temp		; подтягивающий резистор на всякий случай
+	ldi temp,0b11111111	; порт B все контакты на выход
+	out DDRB,temp
+	clr counter		; очищаем счетчик (r18)
+	clr flag		; очищаем наш флаг
+	ldi temp,(1<<TOIE0)	; разрешение прерывания Timer0
+	out TIMSK,temp
+	ldi temp,(1<<ISC01)	; устанавливаем прерывание INT0 по спаду
+	out MCUCR,temp
+	ldi temp,(1<<INT0)	; разрешаем прерывание INT0
+	out GIMSK,temp
+	sei			; разрешаем прерывания
+; ******
+; ****** основной пустой цикл
+; ******
+G:
+	rjmp G
