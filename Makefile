@@ -6,7 +6,7 @@ leds_blinking.hex: leds_blinking.asm
 count_button_press.hex: count_button_press.asm
 	avra -l $(basename $@).lst $^ 
 
-count_button_press_int.hex: count_button_press.asm
+count_button_press_int.hex: count_button_press_int.asm
 	avra -l $(basename $@).lst $^ 
 
 test.hex: test.S

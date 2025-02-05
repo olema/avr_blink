@@ -93,6 +93,10 @@ END_TIMER:
 	rjmp PUSH_TIM	; если 1, то было нажатие
 	ldi temp,(1<<ISC01)	; инчаче устанавливаем INT0 но спаду
 	out MCUCR, temp
+	rjmp END_TIM	; на выход
+PUSH_TIM:		; если было нажатие
+	ldi temp,(1<<ISC01|1<<ISC11)	; устанавливаем INT0 по фронту
+	out MCUCR,temp
 END_TIM:
 	ldi temp,(1<<INT0)	; разрешаем INT0
 	out GIMSK,temp
