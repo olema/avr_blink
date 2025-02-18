@@ -26,7 +26,7 @@
 	reti; rjmp TIM1_COMPA ; Timer1 CompareA Handler
 	reti; rjmp TIM1_COMPB ; Timer1 CompareB Handler
 	reti; rjmp TIM1_OVF ; Timer1 Overflow Handler
-	reti; rjmp TIM0_OVF ; Timer0 Overflow Handler
+	rjmp TIM0_OVF ; Timer0 Overflow Handler
 	reti; rjmp SPI_STC ; SPI Transfer Complete Handler
 	reti; rjmp USART_RXC ; USART RX Complete Handler
 	reti; rjmp USART_UDRE ; UDR Empty Handler
@@ -82,7 +82,7 @@ ENT_INT:
 ; ******
 ; ****** обработчик прерывания таймера Timer0
 ; ******
-TIM0:			; обработчик прерывания Timer0
+TIM0_OVF:			; обработчик прерывания Timer0
 	dec count_time	; в каждом прерывании уменьшаем на 1
 	breq END_TIMER	; если 0, то на конец отсчета
 	reti		; иначе выход из прерывания
@@ -111,18 +111,38 @@ END_TIM:
 RESET:
 	ldi temp,low(RAMEND)	; загрузка указателя стека
 	out SPL,temp
+	ldi temp, high(RAMEND)
+	out SPH, temp
 	ldi temp,0b00000100	; для второго разряда порта D
 	out PORTD,temp		; подтягивающий резистор на всякий случай
 	ldi temp,0b11111111	; порт B все контакты на выход
 	out DDRB,temp
 	clr counter		; очищаем счетчик (r18)
-	clr flag		; очищаем наш флаг
+	clr flag		; очищаем наш флаг (r19)
 	ldi temp,(1<<TOIE0)	; разрешение прерывания Timer0
 	out TIMSK,temp
 	ldi temp,(1<<ISC01)	; устанавливаем прерывание INT0 по спаду
-	out MCUCR,temp
+				; .equ ISC01 = 1 ; Interrupt Sense Control 0 Bit 1
+	out MCUCR,temp		; MCUCR - MCU Control Register
+				; bits:
+				;	7 - SE - Sleep Enable
+				;	6,5,4 - SM2..0 - Sleep Mode Select bits
+				;		0 0 0 - Idle
+				;		0 0 1 - ADC Noise Reduction
+				;		0 1 0 - Power Down 
+				;		0 1 1 - Power Save
+				;		1 0 0 - Reserved
+				;		1 0 1 - Reserved
+				;		1 1 0 - Standby (is only available with external crystals or resonators
+				;       3,2 – ISC11, ISC10: Interrupt Sense Control 1 Bit 1 and Bit 0 (INT1)
+				;		0 0 - The low level of INT1 generates an interrupt request
+				;		0 1 - Any logical change on INT1 generates an interrupt request
+				;		1 0 - The falling edge of INT1 generates an interrupt request
+				;		1 1 - The rising edge of INT1 generates an interrupt request
+				;       1,0 – ISC01, ISC00: Interrupt Sense Control 0 Bit 1 and Bit 0 (INT0)
+				;		
 	ldi temp,(1<<INT0)	; разрешаем прерывание INT0
-	out GIMSK,temp
+	out GICR,temp
 	sei			; разрешаем прерывания
 ; ******
 ; ****** основной пустой цикл
