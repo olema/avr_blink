@@ -43,33 +43,34 @@
 ; ******
 EXT_INT0:		; внешнее прерывание по кнопке
 	clr temp	; запрещаем прерывания по кнопке
-	out GIMSK,temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
+	out GIMSK, temp	; регистр .equ GIMSK = GICR - general interrupt control register (0x3b)
 			;   бит 7 — INT1, маска внешнего прерывания INT1;
 			;   бит 6 — INT0, маска внешнего прерывания INT0;
 			;   бит 5 — INT2, маска внешнего прерывания INT2;
 			;   бит 1 — IVSEL (Interrupt Vector Select);
 			;   бит 0 — IVCE (Interrupt Vector Change Enable).
 			;
-	ldi temp,0xff	; на всякий случай очищаем регистр флагов прерываний
-	out GIFR,temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
-	sbrs flag,0	; проверяем бит 0 нашего регистра флагов (r19) 
+	ldi temp, 0xff	; на всякий случай очищаем регистр флагов прерываний
+	out GIFR, temp	; GIFR - General Interrupt Flag Register (.equ	GIFR	= 0x3a)
+	sbrs flag, 0	; проверяем бит 0 нашего регистра флагов (r19) 
 			; SBRS – Skip if Bit in Register is Set
 			; SBRS Rr,b (0 ≤ r ≤ 31, 0 ≤ b ≤ 7)
 	rjmp PUSH_PIN	; если 0, то было нажатие
-	cbr flag,1	; иначе было отпускание, очищаем бит 0
+	cbr flag, 1	; иначе было отпускание, очищаем бит 0
 			; CBR – Clear Bits in Register
 			; Rd ← Rd ∧ (0xFF - K)  (пояснение: ∧ - AND) 
 			; CBR Rd,K (16 ≤ d ≤ 31, 0 ≤ K ≤ 255)
 	inc counter	; кнопка была отпущена, увеличиваем счетчик
-	out PORTB,counter	; выводим счетчик в порт B
-	ldi count_time,50	; интервал 0.2 сек
+	out PORTB, counter	; выводим счетчик в порт B
+	ldi count_time, 50	; интервал 0.2 сек
 	rjmp ENT_INT	; на выход
 PUSH_PIN:		; было нажатие
-	sbr flag,1	; устанавливаем бит 0
+	sbr flag, 1	; устанавливаем бит 0
 			; SBR – Set Bits in Register
 			; Rd ← Rd v K
 			; SBR Rd,K 16 ≤ d ≤ 31, 0 ≤ K ≤ 255
-	ldi count_time,128	; интервал 0.5 сек
+	ldi count_time, 128	; интервал 0.5 сек
+ 
 ENT_INT:
 	ldi temp,0b00000011	; запуск Timer0, входная частота 1:64
 	out TCCR0,temp	; .equ	TCCR0	= 0x33
@@ -91,7 +92,7 @@ END_TIMER:
 	out TCCR0,temp	;
 	sbrc flag,0	; проверяем бит 0 нашего регистра флагов
 	rjmp PUSH_TIM	; если 1, то было нажатие
-	ldi temp,(1<<ISC01)	; инчаче устанавливаем INT0 но спаду
+	ldi temp,(1<<ISC01)	; иначе устанавливаем INT0 но спаду
 	out MCUCR, temp
 	rjmp END_TIM	; на выход
 PUSH_TIM:		; если было нажатие
@@ -142,6 +143,7 @@ RESET:
 				;       1,0 – ISC01, ISC00: Interrupt Sense Control 0 Bit 1 and Bit 0 (INT0)
 				;		
 	ldi temp,(1<<INT0)	; разрешаем прерывание INT0
+				; .equ INT0 = 6	; External Interrupt Request 0 Enable
 	out GICR,temp
 	sei			; разрешаем прерывания
 ; ******
